@@ -21,13 +21,21 @@ func (f FilterVarFiles) Filter(input interface{}, args ...string) (interface{}, 
 		return nil, fmt.Errorf("filter varfiles expectes map of file patterns as input, got something else")
 	}
 
-	for varName, pattern := range patterns {
-		files, err := filepath.Glob(pattern.(string))
+	for varName, p := range patterns {
+		pattern := p.(string)
+
+		files, err := filepath.Glob(pattern)
 
 		if err != nil {
 			return nil, err
 		}
 
+		var transform = true
+
+		// BUG(not really consistent check, filename could actually contain '*' or '?')
+		if len(files) == 1 && files[0] == filepath.Clean(pattern) {
+			transform = false
+		}
 
 		var entries []interface{}
 
@@ -52,14 +60,14 @@ func (f FilterVarFiles) Filter(input interface{}, args ...string) (interface{}, 
 				return nil, err
 			}
 
-			if list, ok := res.([]interface{}); ok {
+			if list, ok := res.([]interface{}); ok && transform {
 				entries = append(entries, list...)
 			} else {
 				entries = append(entries, res)
 			}
 		}
 
-		if len(files) == 1 && files[0] == pattern.(string) && len(entries) > 0 {
+		if !transform && len(entries) > 0 {
 			out[varName] = entries[0]
 		} else {
 			out[varName] = entries
