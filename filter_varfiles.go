@@ -28,6 +28,7 @@ func (f FilterVarFiles) Filter(input interface{}, args ...string) (interface{}, 
 			return nil, err
 		}
 
+
 		var entries []interface{}
 
 		for _, filename := range files {
@@ -58,7 +59,11 @@ func (f FilterVarFiles) Filter(input interface{}, args ...string) (interface{}, 
 			}
 		}
 
-		out[varName] = entries
+		if len(files) == 1 && files[0] == pattern.(string) && len(entries) > 0 {
+			out[varName] = entries[0]
+		} else {
+			out[varName] = entries
+		}
 	}
 
 	return out, nil
