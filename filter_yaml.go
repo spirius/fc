@@ -4,19 +4,56 @@ import (
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
+	"reflect"
 )
 
 type FilterYAML struct {
 }
 
-func (FilterYAML) Input(in io.Reader, out interface{}, args ...string) error {
+var typeString = reflect.TypeOf("")
+
+// normalize recursively converts
+// map[interface{}]interface{} -> map[string]interface{}
+func (f FilterYAML) normalize(out reflect.Value) {
+	if out.Kind() != reflect.Interface {
+		return
+	}
+
+	elem := out.Elem()
+	kind := elem.Kind()
+	typ := elem.Type()
+
+	if kind == reflect.Map && typ.Key().Kind() == reflect.Interface {
+		nmap := reflect.MakeMapWithSize(reflect.MapOf(typeString, typ.Elem()), elem.Len())
+
+		for _, key := range elem.MapKeys() {
+			val := elem.MapIndex(key)
+			f.normalize(val)
+			nmap.SetMapIndex(key.Elem(), val)
+		}
+
+		out.Set(nmap)
+	} else if kind == reflect.Slice && typ.Elem().Kind() == reflect.Interface {
+		for i := 0; i < elem.Len(); i++ {
+			f.normalize(elem.Index(i))
+		}
+	}
+}
+
+func (f FilterYAML) Input(in io.Reader, out interface{}, args ...string) error {
 	data, err := ioutil.ReadAll(in)
 
 	if err != nil {
 		return err
 	}
 
-	return yaml.Unmarshal(data, out)
+	if err = yaml.Unmarshal(data, out); err != nil {
+		return err
+	}
+
+	f.normalize(reflect.Indirect(reflect.ValueOf(out)))
+
+	return nil
 }
 
 func (FilterYAML) Output(out io.Writer, in interface{}, args ...string) error {
