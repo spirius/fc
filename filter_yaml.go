@@ -14,12 +14,12 @@ var typeString = reflect.TypeOf("")
 
 // normalize recursively converts
 // map[interface{}]interface{} -> map[string]interface{}
-func (f FilterYAML) normalize(out reflect.Value) {
-	if out.Kind() != reflect.Interface {
-		return
+func (f FilterYAML) normalize(in reflect.Value) reflect.Value {
+	if in.Kind() != reflect.Interface {
+		return in
 	}
 
-	elem := out.Elem()
+	elem := in.Elem()
 	kind := elem.Kind()
 	typ := elem.Type()
 
@@ -27,17 +27,18 @@ func (f FilterYAML) normalize(out reflect.Value) {
 		nmap := reflect.MakeMapWithSize(reflect.MapOf(typeString, typ.Elem()), elem.Len())
 
 		for _, key := range elem.MapKeys() {
-			val := elem.MapIndex(key)
-			f.normalize(val)
-			nmap.SetMapIndex(key.Elem(), val)
+			nmap.SetMapIndex(key.Elem(), f.normalize(elem.MapIndex(key)))
 		}
 
-		out.Set(nmap)
+		return nmap
 	} else if kind == reflect.Slice && typ.Elem().Kind() == reflect.Interface {
 		for i := 0; i < elem.Len(); i++ {
-			f.normalize(elem.Index(i))
+			v := elem.Index(i)
+			v.Set(f.normalize(v))
 		}
 	}
+
+	return in
 }
 
 func (f FilterYAML) Input(in io.Reader, out interface{}, args ...string) error {
@@ -51,7 +52,8 @@ func (f FilterYAML) Input(in io.Reader, out interface{}, args ...string) error {
 		return err
 	}
 
-	f.normalize(reflect.Indirect(reflect.ValueOf(out)))
+	outRef := reflect.Indirect(reflect.ValueOf(out))
+	outRef.Set(f.normalize(outRef))
 
 	return nil
 }
