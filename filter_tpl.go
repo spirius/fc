@@ -5,10 +5,27 @@ import (
 	"github.com/Masterminds/sprig"
 	"io"
 	"io/ioutil"
+	"net"
 	"text/template"
 )
 
 type FilterTPL struct {
+}
+
+var funcMap = sprig.TxtFuncMap()
+
+func ipIn(cidr, ipaddr string) (r bool, err error) {
+	_, subnet, err := net.ParseCIDR(cidr)
+
+	if err != nil {
+		return false, err
+	}
+
+	return subnet.Contains(net.ParseIP(ipaddr)), nil
+}
+
+func init() {
+	funcMap["ip_in"] = ipIn
 }
 
 func (_ FilterTPL) Output(output io.Writer, input interface{}, args ...string) error {
@@ -22,7 +39,7 @@ func (_ FilterTPL) Output(output io.Writer, input interface{}, args ...string) e
 		return err
 	}
 
-	tpl, err := template.New("").Funcs(sprig.TxtFuncMap()).Parse(string(content))
+	tpl, err := template.New("").Funcs(funcMap).Parse(string(content))
 
 	if err != nil {
 		return err
