@@ -8,6 +8,7 @@ import (
 )
 
 type FilterYAML struct {
+	baseFilter
 }
 
 var typeString = reflect.TypeOf("")

@@ -13,7 +13,12 @@ type FC struct {
 
 type BaseFilter interface {
 	Description() string
+	setFC(*FC)
 }
+
+type baseFilter struct{}
+
+func (baseFilter) setFC(*FC) {}
 
 type InputFilter interface {
 	BaseFilter
@@ -60,6 +65,7 @@ func (f *FC) AddInputFilter(filter InputFilter, names ...string) error {
 	for _, name := range names {
 		f.inputFilters[name] = filter
 	}
+	filter.setFC(f)
 	return nil
 }
 
@@ -72,6 +78,7 @@ func (f *FC) AddFilter(filter Filter, names ...string) error {
 	for _, name := range names {
 		f.filters[name] = filter
 	}
+	filter.setFC(f)
 	return nil
 }
 
@@ -84,6 +91,7 @@ func (f *FC) AddOutputFilter(filter OutputFilter, names ...string) error {
 	for _, name := range names {
 		f.outputFilters[name] = filter
 	}
+	filter.setFC(f)
 	return nil
 }
 

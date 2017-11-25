@@ -9,6 +9,7 @@ import (
 )
 
 type FilterHCL struct {
+	baseFilter
 }
 
 func (FilterHCL) Output(out io.Writer, in interface{}, args ...string) error {

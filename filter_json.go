@@ -6,6 +6,7 @@ import (
 )
 
 type FilterJSON struct {
+	baseFilter
 }
 
 func (FilterJSON) Input(in io.Reader, out interface{}, args ...string) error {

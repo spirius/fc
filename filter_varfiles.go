@@ -83,6 +83,10 @@ func (FilterVarFiles) Description() string {
 	return filterVarFilesDescription
 }
 
+func (f *FilterVarFiles) setFC(fc *FC) {
+	f.fc = fc
+}
+
 func init() {
-	DefaultFC.AddFilter(&FilterVarFiles{DefaultFC}, "varfiles", "v")
+	DefaultFC.AddFilter(&FilterVarFiles{}, "varfiles", "v")
 }
