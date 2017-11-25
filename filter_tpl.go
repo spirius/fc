@@ -36,7 +36,7 @@ func (f FilterTPL) Output(output io.Writer, input interface{}, args ...string) e
 		return err
 	}
 
-	for filterName, outputFilter := range f.fc.outputFilters {
+	for filterName, outputFilter := range f.fc.OutputFilters {
 		// copy to new variable, so that callback function will
 		// have right reference to outputFilter
 		var of = outputFilter

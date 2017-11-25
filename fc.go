@@ -6,9 +6,9 @@ import (
 )
 
 type FC struct {
-	inputFilters  map[string]InputFilter
-	filters       map[string]Filter
-	outputFilters map[string]OutputFilter
+	InputFilters  map[string]InputFilter
+	Filters       map[string]Filter
+	OutputFilters map[string]OutputFilter
 }
 
 type BaseFilter interface {
@@ -50,20 +50,20 @@ type Pipeline struct {
 
 func NewFC() *FC {
 	return &FC{
-		inputFilters:  make(map[string]InputFilter),
-		filters:       make(map[string]Filter),
-		outputFilters: make(map[string]OutputFilter),
+		InputFilters:  make(map[string]InputFilter),
+		Filters:       make(map[string]Filter),
+		OutputFilters: make(map[string]OutputFilter),
 	}
 }
 
 func (f *FC) AddInputFilter(filter InputFilter, names ...string) error {
 	for _, name := range names {
-		if _, ok := f.inputFilters[name]; ok {
+		if _, ok := f.InputFilters[name]; ok {
 			return fmt.Errorf("Cannot add InputFilter, filter '%s' already exists", name)
 		}
 	}
 	for _, name := range names {
-		f.inputFilters[name] = filter
+		f.InputFilters[name] = filter
 	}
 	filter.setFC(f)
 	return nil
@@ -71,12 +71,12 @@ func (f *FC) AddInputFilter(filter InputFilter, names ...string) error {
 
 func (f *FC) AddFilter(filter Filter, names ...string) error {
 	for _, name := range names {
-		if _, ok := f.filters[name]; ok {
+		if _, ok := f.Filters[name]; ok {
 			return fmt.Errorf("Cannot add Filter, filter '%s' already exists", name)
 		}
 	}
 	for _, name := range names {
-		f.filters[name] = filter
+		f.Filters[name] = filter
 	}
 	filter.setFC(f)
 	return nil
@@ -84,12 +84,12 @@ func (f *FC) AddFilter(filter Filter, names ...string) error {
 
 func (f *FC) AddOutputFilter(filter OutputFilter, names ...string) error {
 	for _, name := range names {
-		if _, ok := f.outputFilters[name]; ok {
+		if _, ok := f.OutputFilters[name]; ok {
 			return fmt.Errorf("Cannot add OutputFilter, filter '%s' already exists", name)
 		}
 	}
 	for _, name := range names {
-		f.outputFilters[name] = filter
+		f.OutputFilters[name] = filter
 	}
 	filter.setFC(f)
 	return nil
@@ -103,7 +103,7 @@ func (f *FC) NewPipeline() *Pipeline {
 
 func (f *FC) GetInputFilter(name string) (filter InputFilter, err error) {
 	var ok bool
-	filter, ok = f.inputFilters[name]
+	filter, ok = f.InputFilters[name]
 
 	if !ok {
 		err = fmt.Errorf("Unknown input filter '%s'", name)
@@ -114,7 +114,7 @@ func (f *FC) GetInputFilter(name string) (filter InputFilter, err error) {
 
 func (p *Pipeline) SetInputFilter(inputFilter string, args ...string) error {
 	var ok bool
-	if p.inputFilter, ok = p.fc.inputFilters[inputFilter]; !ok {
+	if p.inputFilter, ok = p.fc.InputFilters[inputFilter]; !ok {
 		return fmt.Errorf("Unknown InputFilter '%s'", inputFilter)
 	}
 	p.inputArgs = args
@@ -123,7 +123,7 @@ func (p *Pipeline) SetInputFilter(inputFilter string, args ...string) error {
 
 func (p *Pipeline) SetOutputFilter(outputFilter string, args ...string) error {
 	var ok bool
-	if p.outputFilter, ok = p.fc.outputFilters[outputFilter]; !ok {
+	if p.outputFilter, ok = p.fc.OutputFilters[outputFilter]; !ok {
 		return fmt.Errorf("Unknown OutputFilter '%s'", outputFilter)
 	}
 	p.outputArgs = args
@@ -135,7 +135,7 @@ func (p *Pipeline) AddFilter(filterName string, args ...string) error {
 		f  Filter
 		ok bool
 	)
-	if f, ok = p.fc.filters[filterName]; !ok {
+	if f, ok = p.fc.Filters[filterName]; !ok {
 		return fmt.Errorf("Unknown Filter '%s'", filterName)
 	}
 	p.filters = append(p.filters, f)
