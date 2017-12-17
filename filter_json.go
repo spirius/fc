@@ -17,10 +17,10 @@ func (FilterJSON) Output(out io.Writer, in interface{}, args ...string) error {
 	encoder := json.NewEncoder(out)
 
 	for _, a := range args {
-	    switch a {
-	    case "pretty", "p":
-	        encoder.SetIndent("", "  ")
-	    }
+		switch a {
+		case "pretty", "p":
+			encoder.SetIndent("", "  ")
+		}
 	}
 
 	return encoder.Encode(in)
