@@ -121,6 +121,15 @@ func NewFilterTPL() (r *FilterTPL) {
 	r.funcMap["import"] = func(filename string) (interface{}, error) {
 		return r.importTpl(filename)
 	}
+	r.funcMap["render"] = func(content string, ctx interface{}) (interface{}, error) {
+		tpl, err := r.createTpl(content)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return TplImport{tpl: tpl}.Render(ctx)
+	}
 
 	r.basepath = os.Getenv("FC_TPL_BASEPATH")
 
