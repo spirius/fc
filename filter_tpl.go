@@ -7,8 +7,11 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"text/template"
 )
 
@@ -16,6 +19,7 @@ type FilterTPL struct {
 	fc       *FC
 	funcMap  map[string]interface{}
 	basepath string
+	s3       *S3Downloader
 }
 
 func cidr_Contains(cidr_addr, ip_addr string) (r bool, err error) {
@@ -113,6 +117,117 @@ func (f FilterTPL) importTpl(filename string) (_ interface{}, err error) {
 	}, nil
 }
 
+type fileInfo struct {
+	VersionId string
+}
+
+func (f *FilterTPL) parseToStruct(filename string, body io.Reader) (res interface{}, err error) {
+	ext := filepath.Ext(filename)
+
+	filter, err := f.fc.GetInputFilter(ext[1:])
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err = filter.Input(body, &res); err != nil {
+		return
+	}
+
+	return
+}
+
+func (f *FilterTPL) loadPatternS3(bucket, pattern string, filesInfo map[string]interface{}) (entries []interface{}, err error) {
+	if f.s3 == nil {
+		f.s3, err = NewS3Downloader()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	files, err := f.s3.DownloadFilesByPattern(bucket, pattern)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for key, obj := range files {
+		res, err := f.parseToStruct(key, obj.Body)
+
+		if err != nil {
+			return nil, err
+		}
+
+		infoObj := &fileInfo{}
+
+		if obj.VersionId != nil {
+			infoObj.VersionId = *obj.VersionId
+		}
+
+		if list, ok := res.([]interface{}); ok {
+			for _, e := range list {
+				filesInfo[strconv.Itoa(len(entries))] = infoObj
+				entries = append(entries, e)
+			}
+		} else {
+			filesInfo[strconv.Itoa(len(entries))] = infoObj
+			entries = append(entries, res)
+		}
+	}
+
+	return entries, nil
+}
+
+func (f *FilterTPL) loadFile(urlStr string) (interface{}, error) {
+	urlInfo, err := url.Parse(urlStr)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if urlInfo.Scheme == "s3" {
+		if f.s3 == nil {
+			f.s3, err = NewS3Downloader()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		parts := strings.SplitN(urlInfo.Path, ":", 2)
+
+		var versionId string
+
+		if len(parts) > 1 {
+			versionId = parts[1]
+		}
+
+		obj, err := f.s3.DownloadFileVersion(urlInfo.Host, parts[0][1:], versionId)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return f.parseToStruct(parts[0], obj.Body)
+	} else {
+		return nil, fmt.Errorf("Unknown scheme '%s'", urlInfo.Scheme)
+	}
+}
+
+func (f *FilterTPL) loadPattern(urlStr string, filesInfo map[string]interface{}) (entries []interface{}, err error) {
+	urlInfo, err := url.Parse(urlStr)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if urlInfo.Scheme == "s3" {
+
+		return f.loadPatternS3(urlInfo.Host, urlInfo.Path[1:], filesInfo)
+	} else {
+		return nil, fmt.Errorf("Unknown scheme '%s'", urlInfo.Scheme)
+	}
+}
+
 func NewFilterTPL() (r *FilterTPL) {
 	r = &FilterTPL{}
 
@@ -132,6 +247,9 @@ func NewFilterTPL() (r *FilterTPL) {
 	}
 
 	r.basepath = os.Getenv("FC_TPL_BASEPATH")
+
+	r.funcMap["loadPattern"] = r.loadPattern
+	r.funcMap["load"] = r.loadFile
 
 	return
 }
