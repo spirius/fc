@@ -208,6 +208,22 @@ func (f *FilterTPL) loadFile(urlStr string) (interface{}, error) {
 		}
 
 		return f.parseToStruct(parts[0], obj.Body)
+	} else if urlInfo.Scheme == "file" || urlInfo.Scheme == "" {
+		filename := urlInfo.Host + urlInfo.Path
+
+		if filepath.IsAbs(filename) && f.basepath != "" {
+			if filename, err = filepath.Abs(f.basepath + "/" + filename); err != nil {
+				return nil, err
+			}
+		}
+
+		file, err := os.Open(filename)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return f.parseToStruct(filename, file)
 	} else {
 		return nil, fmt.Errorf("Unknown scheme '%s'", urlInfo.Scheme)
 	}
@@ -221,7 +237,6 @@ func (f *FilterTPL) loadPattern(urlStr string, filesInfo map[string]interface{})
 	}
 
 	if urlInfo.Scheme == "s3" {
-
 		return f.loadPatternS3(urlInfo.Host, urlInfo.Path[1:], filesInfo)
 	} else {
 		return nil, fmt.Errorf("Unknown scheme '%s'", urlInfo.Scheme)
