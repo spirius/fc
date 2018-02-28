@@ -21,6 +21,11 @@ func (f FilterYAML) normalize(in reflect.Value) reflect.Value {
 	}
 
 	elem := in.Elem()
+
+	if !elem.IsValid() {
+		return in
+	}
+
 	kind := elem.Kind()
 	typ := elem.Type()
 
