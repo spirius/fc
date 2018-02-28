@@ -118,6 +118,8 @@ func (f FilterTPL) importTpl(filename string) (_ interface{}, err error) {
 }
 
 type fileInfo struct {
+	Bucket    string
+	Key       string
 	VersionId string
 }
 
@@ -137,7 +139,7 @@ func (f *FilterTPL) parseToStruct(filename string, body io.Reader) (res interfac
 	return
 }
 
-func (f *FilterTPL) loadPatternS3(bucket, pattern string, filesInfo map[string]interface{}) (entries []interface{}, err error) {
+func (f *FilterTPL) loadPatternS3(bucket, pattern string, args ...map[string]interface{}) (entries []interface{}, err error) {
 	if f.s3 == nil {
 		f.s3, err = NewS3Downloader()
 		if err != nil {
@@ -149,6 +151,12 @@ func (f *FilterTPL) loadPatternS3(bucket, pattern string, filesInfo map[string]i
 
 	if err != nil {
 		return nil, err
+	}
+
+	var filesInfo map[string]interface{}
+
+	if len(args) > 0 {
+		filesInfo = args[0]
 	}
 
 	for key, obj := range files {
@@ -163,14 +171,20 @@ func (f *FilterTPL) loadPatternS3(bucket, pattern string, filesInfo map[string]i
 		if obj.VersionId != nil {
 			infoObj.VersionId = *obj.VersionId
 		}
+		infoObj.Bucket = bucket
+		infoObj.Key = key
 
 		if list, ok := res.([]interface{}); ok {
 			for _, e := range list {
-				filesInfo[strconv.Itoa(len(entries))] = infoObj
+				if filesInfo != nil {
+					filesInfo[strconv.Itoa(len(entries))] = infoObj
+				}
 				entries = append(entries, e)
 			}
 		} else {
-			filesInfo[strconv.Itoa(len(entries))] = infoObj
+			if filesInfo != nil {
+				filesInfo[strconv.Itoa(len(entries))] = infoObj
+			}
 			entries = append(entries, res)
 		}
 	}
@@ -178,11 +192,17 @@ func (f *FilterTPL) loadPatternS3(bucket, pattern string, filesInfo map[string]i
 	return entries, nil
 }
 
-func (f *FilterTPL) loadFile(urlStr string) (interface{}, error) {
+func (f *FilterTPL) loadFile(urlStr string, args ...map[string]interface{}) (interface{}, error) {
 	urlInfo, err := url.Parse(urlStr)
 
 	if err != nil {
 		return nil, err
+	}
+
+	var info map[string]interface{}
+
+	if len(args) > 0 {
+		info = args[0]
 	}
 
 	if urlInfo.Scheme == "s3" {
@@ -195,16 +215,29 @@ func (f *FilterTPL) loadFile(urlStr string) (interface{}, error) {
 
 		parts := strings.SplitN(urlInfo.Path, ":", 2)
 
-		var versionId string
+		var (
+			versionId string
+			key       string
+		)
 
 		if len(parts) > 1 {
 			versionId = parts[1]
 		}
 
-		obj, err := f.s3.DownloadFileVersion(urlInfo.Host, parts[0][1:], versionId)
+		key = parts[0][1:]
+
+		obj, err := f.s3.DownloadFileVersion(urlInfo.Host, key, versionId)
 
 		if err != nil {
 			return nil, err
+		}
+
+		if info != nil {
+			info["0"] = &fileInfo{
+				Bucket:    urlInfo.Host,
+				Key:       key,
+				VersionId: versionId,
+			}
 		}
 
 		return f.parseToStruct(parts[0], obj.Body)
@@ -229,15 +262,57 @@ func (f *FilterTPL) loadFile(urlStr string) (interface{}, error) {
 	}
 }
 
-func (f *FilterTPL) loadPattern(urlStr string, filesInfo map[string]interface{}) (entries []interface{}, err error) {
+func (f *FilterTPL) loadPattern(urlStr string, args ...map[string]interface{}) (entries []interface{}, err error) {
 	urlInfo, err := url.Parse(urlStr)
 
 	if err != nil {
 		return nil, err
 	}
 
+	var filesInfo map[string]interface{}
+
+	if len(args) > 0 {
+		filesInfo = args[0]
+	}
+
 	if urlInfo.Scheme == "s3" {
 		return f.loadPatternS3(urlInfo.Host, urlInfo.Path[1:], filesInfo)
+	} else if urlInfo.Scheme == "file" || urlInfo.Scheme == "" {
+		pattern := urlInfo.Host + urlInfo.Path
+
+		if filepath.IsAbs(pattern) && f.basepath != "" {
+			if pattern, err = filepath.Abs(f.basepath + "/" + pattern); err != nil {
+				return nil, err
+			}
+		}
+
+		files, err := filepath.Glob(pattern)
+
+		if err != nil {
+			return nil, err
+		}
+
+		for _, filename := range files {
+			file, err := os.Open(filename)
+
+			if err != nil {
+				return nil, err
+			}
+
+			res, err := f.parseToStruct(filename, file)
+
+			if err != nil {
+				return nil, err
+			}
+
+			if list, ok := res.([]interface{}); ok {
+				entries = append(entries, list...)
+			} else {
+				entries = append(entries, res)
+			}
+		}
+
+		return entries, nil
 	} else {
 		return nil, fmt.Errorf("Unknown scheme '%s'", urlInfo.Scheme)
 	}
