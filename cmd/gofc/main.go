@@ -62,6 +62,7 @@ func main() {
 	flagSet.Var((*filterArg)(c), "a", "filter argument")
 
 	if err := flagSet.Parse(os.Args[1:]); err != nil {
+		os.Exit(1)
 		return
 	}
 

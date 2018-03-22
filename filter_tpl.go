@@ -46,6 +46,16 @@ func (f FilterTPL) createTpl(content string) (*template.Template, error) {
 		}
 	}
 
+	for filterName, inputFilter := range f.fc.InputFilters {
+		// copy to new variable, so that callback function will
+		// have right reference to inputFilter
+		var filter = inputFilter
+		f.funcMap["input_"+filterName] = func(input string, args ...string) (output interface{}, err error) {
+			err = filter.Input(bytes.NewBufferString(input), &output, args...)
+			return
+		}
+	}
+
 	return template.New("").Funcs(f.funcMap).Parse(content)
 }
 
