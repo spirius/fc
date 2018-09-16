@@ -101,12 +101,14 @@ func main() {
 	}
 
 	if err != nil {
-		panic(err)
+		printError(err)
+		os.Exit(1)
 		return
 	}
 
 	if err = pipeline.Process(os.Stdin, os.Stdout); err != nil {
 		printError(err)
+		os.Exit(1)
 		return
 	}
 }
