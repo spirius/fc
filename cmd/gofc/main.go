@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/juju/errors"
 	"github.com/spirius/fc"
 	"os"
+	"strings"
 )
 
 type filter struct {
@@ -37,6 +39,14 @@ func (cc *filterName) String() string {
 	return ""
 }
 
+func printError(err error) {
+	fmt.Fprintf(os.Stderr, "Error while processing template: %s", err)
+
+	if e, ok := err.(*errors.Err); ok {
+		fmt.Fprintf(os.Stderr, "StackTrace:\n", strings.Join(e.StackTrace(), "\n"))
+	}
+}
+
 func (cc *filterArg) Set(value string) error {
 	c := (*Config)(cc)
 
@@ -54,6 +64,8 @@ func (cc *filterArg) String() string {
 }
 
 func main() {
+	var err error
+
 	c := &Config{}
 
 	flagSet := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
@@ -61,7 +73,7 @@ func main() {
 	flagSet.Var((*filterName)(c), "f", "filter name")
 	flagSet.Var((*filterArg)(c), "a", "filter argument")
 
-	if err := flagSet.Parse(os.Args[1:]); err != nil {
+	if err = flagSet.Parse(os.Args[1:]); err != nil {
 		os.Exit(1)
 		return
 	}
@@ -84,11 +96,17 @@ func main() {
 		}
 
 		if err := fn(f.name, f.args...); err != nil {
-			panic(err)
+			break
 		}
 	}
 
-	if err := pipeline.Process(os.Stdin, os.Stdout); err != nil {
+	if err != nil {
 		panic(err)
+		return
+	}
+
+	if err = pipeline.Process(os.Stdin, os.Stdout); err != nil {
+		printError(err)
+		return
 	}
 }

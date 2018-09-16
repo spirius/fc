@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+
+	"github.com/juju/errors"
 )
 
 type FilterTPL struct {
@@ -91,13 +93,40 @@ func (f *FilterTPL) setFC(fc *FC) {
 
 type TplImport struct {
 	tpl *template.Template
+	dir string
 }
 
 func (t TplImport) Render(input interface{}) (string, error) {
 	var buf bytes.Buffer
+	var cwd string
+	var err error
 
-	if err := t.tpl.Execute(&buf, input); err != nil {
-		return "", err
+	chdir := t.dir != "" && t.dir != "."
+
+	if chdir {
+
+		// Remember cwd
+		cwd, err = os.Getwd()
+		if err != nil {
+			return "", errors.Trace(err)
+		}
+
+		// change dir to template's dir
+		if err = os.Chdir(t.dir); err != nil {
+			return "", errors.Trace(err)
+		}
+	}
+
+	// Execute the template
+	if err = t.tpl.Execute(&buf, input); err != nil {
+		return "", errors.Trace(err)
+	}
+
+	if chdir {
+		// Recover cwd
+		if err = os.Chdir(cwd); err != nil {
+			return "", errors.Trace(err)
+		}
 	}
 
 	return buf.String(), nil
@@ -124,6 +153,7 @@ func (f FilterTPL) importTpl(filename string) (_ interface{}, err error) {
 
 	return &TplImport{
 		tpl: tpl,
+		dir: filepath.Dir(filename),
 	}, nil
 }
 
