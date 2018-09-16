@@ -263,6 +263,12 @@
 			"revisionTime": "2017-11-21T00:01:24Z"
 		},
 		{
+			"checksumSHA1": "ZGOsgr3QIbI+9qGJEpzXnlb/mM4=",
+			"path": "github.com/juju/errors",
+			"revision": "22422dad46e14561a0854ad42497a75af9b61909",
+			"revisionTime": "2018-08-06T07:45:54Z"
+		},
+		{
 			"checksumSHA1": "zmC8/3V4ls53DJlNTKDZwPSC/dA=",
 			"path": "github.com/satori/go.uuid",
 			"revision": "0aa62d5ddceb50dbcb909d790b5345affd3669b6",
