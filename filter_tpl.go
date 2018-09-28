@@ -35,11 +35,15 @@ func cidr_Contains(cidr_addr, ip_addr string) (r bool, err error) {
 }
 
 func (f FilterTPL) createTpl(content string) (*template.Template, error) {
+	funcMap := make(map[string]interface{}, len(f.funcMap))
+	for k, v := range funcMap {
+		funcMap[k] = v
+	}
 	for filterName, outputFilter := range f.fc.OutputFilters {
 		// copy to new variable, so that callback function will
 		// have right reference to outputFilter
 		var of = outputFilter
-		f.funcMap["output_"+filterName] = func(input interface{}, args ...string) (_ string, err error) {
+		funcMap["output_"+filterName] = func(input interface{}, args ...string) (_ string, err error) {
 			var buffer bytes.Buffer
 			if err = of.Output(&buffer, input, args...); err != nil {
 				return
@@ -52,13 +56,13 @@ func (f FilterTPL) createTpl(content string) (*template.Template, error) {
 		// copy to new variable, so that callback function will
 		// have right reference to inputFilter
 		var filter = inputFilter
-		f.funcMap["input_"+filterName] = func(input string, args ...string) (output interface{}, err error) {
+		funcMap["input_"+filterName] = func(input string, args ...string) (output interface{}, err error) {
 			err = filter.Input(bytes.NewBufferString(input), &output, args...)
 			return
 		}
 	}
 
-	return template.New("").Funcs(f.funcMap).Parse(content)
+	return template.New("").Funcs(funcMap).Parse(content)
 }
 
 func (f FilterTPL) Output(output io.Writer, input interface{}, args ...string) error {
