@@ -36,7 +36,7 @@ func cidr_Contains(cidr_addr, ip_addr string) (r bool, err error) {
 
 func (f FilterTPL) createTpl(content string) (*template.Template, error) {
 	funcMap := make(map[string]interface{}, len(f.funcMap))
-	for k, v := range funcMap {
+	for k, v := range f.funcMap {
 		funcMap[k] = v
 	}
 	for filterName, outputFilter := range f.fc.OutputFilters {
