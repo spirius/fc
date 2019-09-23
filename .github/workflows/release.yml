@@ -1,0 +1,145 @@
+name: Release
+on:
+  push:
+    tags:
+      - v*
+jobs:
+  tests:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Set up Go 1.12
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.12
+        id: go
+
+      - name: Check out code
+        uses: actions/checkout@v1
+
+      - name: Get dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          echo ::add-path::/home/runner/go/bin/
+          go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+          sudo apt-get update -y && sudo apt-get install -y libjq-dev
+
+      - name: Run unit tests
+        run: |
+          GO111MODULE=on golangci-lint run
+          GO111MODULE=on go test -mod=vendor -v -race ./...
+
+  build:
+    needs: [tests]
+    strategy:
+      matrix:
+        os: [macOS-10.14, ubuntu-18.04]
+        include:
+          - os: macOS-10.14
+            name: darwin_amd64
+            installjq: true
+            dependecies: |
+              brew install automake libtool
+              brew uninstall jq oniguruma
+            build: |
+              go build -mod=vendor -v \
+                -ldflags '-s -w -X main.Version='${GITHUB_REF/refs\/tags\/v/} \
+                -tags 'osusergo netgo static_build' -o dist/gofc ./cmd/gofc
+          - os: ubuntu-18.04
+            name: linux_amd64
+            installjq: true
+            dependecies: |
+              sudo apt-get install
+              sudo apt-get remove -y jq libonig4 && sudo dpkg --purge jq libonig4
+            build: |
+              go build -mod=vendor -v \
+                -ldflags '-s -w -X main.Version='${GITHUB_REF/refs\/tags\/v/}' -extldflags "-static"' \
+                -tags 'osusergo netgo static_build' -o dist/gofc ./cmd/gofc
+
+    name: "Build: ${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Set up Go 1.12
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.12
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+
+      - name: Get dependencies
+        run: ${{ matrix.dependecies }}
+        shell: bash
+
+      - name: Install JQ
+        run: |
+          curl -fL https://github.com/stedolan/jq/releases/download/jq-1.6/jq-1.6.tar.gz | tar -zx
+          cd jq-1.6
+          autoreconf -i
+          ./configure --disable-maintainer-mode --enable-all-static --enable-shared=no 
+          make
+          sudo make install
+
+      - name: Static build
+        run: ${{ matrix.build }}
+        shell: bash
+        env:
+          GO111MODULE: "on"
+          CGO_CFLAGS: "-static"
+          CGO_LDFLAGS: "-ljq -lonig"
+
+      - name: Package
+        run: |
+          cd dist && zip gofc_${{ matrix.name }}.zip gofc
+
+      - name: Upload
+        uses: actions/upload-artifact@master
+        with:
+          name: ${{ matrix.name }}
+          path: dist/gofc_${{ matrix.name }}.zip
+
+  release:
+    needs: [build]
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v1
+      
+      - name: Download darwin build
+        uses: actions/download-artifact@master
+        with:
+          name: darwin_amd64
+
+      - name: Download linux build
+        uses: actions/download-artifact@master
+        with:
+          name: linux_amd64
+      
+      - name: Extract changelog snippet
+        id: changelog
+        run: |
+          cat CHANGELOG.md | awk '/^#/{ if(p==1) exit } /^# *v2.0.0/{ p=1 } !/^\s*$/{if (p==1) {print $0}}' > CHANGELOG.snippet.md
+          # hack to get multi-line changelog. The '{0}' represents newlines, and replaced later in Release step.
+          # All this, because body_path argument is not working in Release.
+          echo ::set-output name=changelog::"$(awk '{r=r $0 "{0}"} END {print r}' < CHANGELOG.snippet.md)"
+      
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            darwin_amd64/gofc_darwin_amd64.zip
+            linux_amd64/gofc_linux_amd64.zip
+          # replace {0} with newline
+          body: |
+            ${{ format(steps.changelog.outputs.changelog, '
+            ') }}
+          draft: false #'
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
