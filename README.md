@@ -3,6 +3,7 @@ Format converter (FC) is a structured data format converter and template renderi
 # Table of contents
 
 * [Overview](#overview)
+* [Download](#download)
 * [Usage](#usage)
 * [Templating](#templating)
   * [Additional template functions](#additional-template-functions)
@@ -28,6 +29,15 @@ Supported output formats are: **JSON**, **YAML**, **TOML**, **HCL** and **templa
 
 HCL2 format have types of constructs - 
 [arguments](https://www.terraform.io/docs/configuration/syntax.html#arguments) and [blocks](https://www.terraform.io/docs/configuration/syntax.html#blocks). In gofc `arguments` are used as primary input stream, so conversion from HCL -> JSON will output only `arguments` and `blocks` will be ignored. `Blocks` are available in template engine via [metadata](#metadata---any) function.
+
+# Download
+
+gofc is provided as a static binary.
+You can [download](https://github.com/spirius/fc/releases/latest)
+it from releases page.
+
+If you want to compile it, make sure
+to install libjq and libonig devel packages.
 
 # Usage
 
@@ -204,4 +214,3 @@ Will produce following
 echo 42 | gofc -i json -o yaml  # works as expected
 echo 42 | gofc -i json -o hcl   # will fail
 ```
-
