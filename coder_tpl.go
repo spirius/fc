@@ -107,6 +107,7 @@ func (c *coderTPL) tplFuncImport(fileURL string, options ...string) (res interfa
 	for _, p := range strings.Split(strings.Join(options, ","), ",") {
 		p = strings.TrimSpace(p)
 		switch p {
+		case "":
 		case "raw":
 			opts.raw = true
 		case "nofail":

@@ -1,0 +1,1 @@
+{{ import "./import/basic/file1.json" | toJson }}

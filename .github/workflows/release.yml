@@ -80,7 +80,7 @@ jobs:
           curl -fL https://github.com/stedolan/jq/releases/download/jq-1.6/jq-1.6.tar.gz | tar -zx
           cd jq-1.6
           autoreconf -i
-          ./configure --disable-maintainer-mode --enable-all-static --enable-shared=no 
+          ./configure --disable-maintainer-mode --enable-all-static --enable-shared=no
           make
           sudo make install
 
@@ -109,7 +109,7 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v1
-      
+
       - name: Download darwin build
         uses: actions/download-artifact@master
         with:
@@ -119,7 +119,7 @@ jobs:
         uses: actions/download-artifact@master
         with:
           name: linux_amd64
-      
+
       - name: Extract changelog snippet
         id: changelog
         run: |
@@ -127,7 +127,7 @@ jobs:
           # hack to get multi-line changelog. The '{0}' represents newlines, and replaced later in Release step.
           # All this, because body_path argument is not working in Release.
           echo ::set-output name=changelog::"$(awk '{r=r $0 "{0}"} END {print r}' < CHANGELOG.snippet.md)"
-      
+
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')

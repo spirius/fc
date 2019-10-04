@@ -2,6 +2,7 @@ package fc
 
 import (
 	"bytes"
+	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -47,4 +48,18 @@ func TestTPLOutputJSON(t *testing.T) {
 		Output:      &out,
 	}))
 	require.JSONEq(t, testInput, out.String())
+}
+
+func TestTPLImport(t *testing.T) {
+	var out bytes.Buffer
+	require.NoError(t, DefaultRecoder.Run(&Config{
+		Decoder:     "j",
+		Encoder:     "tpl",
+		EncoderArgs: []string{"./testdata/import.tpl"},
+		Input:       bytes.NewBufferString(testInput),
+		Output:      &out,
+	}))
+	expOutput, err := ioutil.ReadFile("./testdata/import/basic/file1.json")
+	require.NoError(t, err)
+	require.JSONEq(t, string(expOutput), out.String())
 }
