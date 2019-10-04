@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: Set up Go 1.12
+      - name: Set up Go 1.13
         uses: actions/setup-go@v1
         with:
-          go-version: 1.12
+          go-version: 1.13
         id: go
 
       - name: Check out code
@@ -62,10 +62,10 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Set up Go 1.12
+      - name: Set up Go 1.13
         uses: actions/setup-go@v1
         with:
-          go-version: 1.12
+          go-version: 1.13
         id: go
 
       - name: Check out code into the Go module directory
@@ -123,7 +123,7 @@ jobs:
       - name: Extract changelog snippet
         id: changelog
         run: |
-          cat CHANGELOG.md | awk '/^#/{ if(p==1) exit } /^# *v2.0.0/{ p=1 } !/^\s*$/{if (p==1) {print $0}}' > CHANGELOG.snippet.md
+          cat CHANGELOG.md | awk '/^#/{ if(p==1) exit } /^# *'${GITHUB_REF/refs\/tags\/v/}'/{ p=1 } !/^\s*$/{if (p==1) {print $0}}' > CHANGELOG.snippet.md
           # hack to get multi-line changelog. The '{0}' represents newlines, and replaced later in Release step.
           # All this, because body_path argument is not working in Release.
           echo ::set-output name=changelog::"$(awk '{r=r $0 "{0}"} END {print r}' < CHANGELOG.snippet.md)"
