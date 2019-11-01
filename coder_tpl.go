@@ -10,7 +10,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Masterminds/sprig"
+	sprig "github.com/Masterminds/sprig/v3"
 	"github.com/ashb/jqrepl/jq"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/juju/errors"
