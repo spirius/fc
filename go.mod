@@ -4,9 +4,7 @@ go 1.12
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/Masterminds/goutils v1.1.0 // indirect
-	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/Masterminds/sprig v2.21.0+incompatible
+	github.com/Masterminds/sprig/v3 v3.0.0
 	github.com/agext/levenshtein v1.2.2 // indirect
 	github.com/ashb/jqrepl v0.1.0
 	github.com/aws/aws-sdk-go v1.24.6
@@ -15,10 +13,7 @@ require (
 	github.com/go-test/deep v1.0.4 // indirect
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
-	github.com/google/uuid v1.1.1 // indirect
 	github.com/hashicorp/hcl2 v0.0.0-20190909202536-66c59f909e25
-	github.com/huandu/xstrings v1.2.0 // indirect
-	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/juju/errors v0.0.0-20190806202954-0232dcc7464d
 	github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8 // indirect
 	github.com/juju/testing v0.0.0-20190723135506-ce30eb24acd2 // indirect

@@ -2,10 +2,10 @@
 github.com/BurntSushi/toml
 # github.com/Masterminds/goutils v1.1.0
 github.com/Masterminds/goutils
-# github.com/Masterminds/semver v1.5.0
-github.com/Masterminds/semver
-# github.com/Masterminds/sprig v2.21.0+incompatible
-github.com/Masterminds/sprig
+# github.com/Masterminds/semver/v3 v3.0.1
+github.com/Masterminds/semver/v3
+# github.com/Masterminds/sprig/v3 v3.0.0
+github.com/Masterminds/sprig/v3
 # github.com/agext/levenshtein v1.2.2
 github.com/agext/levenshtein
 # github.com/apparentlymart/go-textseg v1.0.0
@@ -87,12 +87,18 @@ github.com/inconshreveable/go-update/internal/osext
 github.com/jmespath/go-jmespath
 # github.com/juju/errors v0.0.0-20190806202954-0232dcc7464d
 github.com/juju/errors
+# github.com/mitchellh/copystructure v1.0.0
+github.com/mitchellh/copystructure
 # github.com/mitchellh/go-wordwrap v1.0.0
 github.com/mitchellh/go-wordwrap
+# github.com/mitchellh/reflectwalk v1.0.0
+github.com/mitchellh/reflectwalk
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
 # github.com/rhysd/go-github-selfupdate v1.1.0
 github.com/rhysd/go-github-selfupdate/selfupdate
+# github.com/spf13/cast v1.3.0
+github.com/spf13/cast
 # github.com/stretchr/testify v1.4.0
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
