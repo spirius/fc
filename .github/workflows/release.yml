@@ -42,7 +42,7 @@ jobs:
             installjq: true
             dependecies: |
               brew install automake libtool
-              brew uninstall jq oniguruma
+              brew uninstall --ignore-dependencies jq oniguruma
             build: |
               go build -mod=vendor -v \
                 -ldflags '-s -w -X main.Version='${GITHUB_REF/refs\/tags\/v/} \

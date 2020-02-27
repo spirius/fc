@@ -30,10 +30,11 @@ Options:
 Supported coders:
 json, j        - JSON decoder/encoder
 yaml, yml, y   - YANL decoder/encoder
-hcl, h         - HCL decoder/encoder, only Attributes are supported, blocks are ignored
+hcl, h         - HCL decoder/encoder, only HCL Attributes are supported, blocks are ignored
 toml, t        - TOML decoder/encoder
-tpl            - template encoder
-  ARG1          - template file path
+null, n        - null decoder
+tpl            - template encoder, provides golang template based engine
+  path         - template file path (e.g.: gofc -i n -o tpl config.tpl)
 
 For more information and examples, please visit https://github.com/spirius/fc
 
@@ -72,16 +73,14 @@ func readCoderConfig(c **coderConfig, args []string) ([]string, error) {
 var Version = "local-build"
 
 func checkUpdate() (*selfupdate.Release, error) {
-	v, err := semver.Make(Version)
-	if err != nil {
-		return nil, errors.Annotatef(err, "cannot parse version")
-	}
 	latest, found, err := selfupdate.DetectLatest("spirius/fc")
 	if err != nil {
 		return nil, errors.Annotatef(err, "cannot check version")
 	}
 
-	if !found || latest.Version.LTE(v) {
+	v, verr := semver.Make(Version)
+
+	if !found || (verr == nil && latest.Version.LTE(v)) {
 		fmt.Printf("Current version is the latest: %s\n", Version)
 		return nil, nil
 	}
@@ -146,8 +145,8 @@ func main() {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "error: %s\n", err)
 			} else if latest != nil {
-				fmt.Println("New version is available", latest.Version)
-				fmt.Println("Release note:\n", latest.ReleaseNotes)
+				fmt.Printf("New version is available: %s, current version: %s\n", latest.Version, Version)
+				fmt.Printf("Release note:\n%s\n", latest.ReleaseNotes)
 			}
 			return
 		default:

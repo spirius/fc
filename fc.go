@@ -131,6 +131,7 @@ func init() {
 	DefaultRecoder.Register(&coderYAML{})
 	DefaultRecoder.Register(&coderHCL{})
 	DefaultRecoder.Register(&coderTOML{})
+	DefaultRecoder.Register(&coderNULL{})
 
 	sess := session.New() //nolint
 	tpl := newCoderTPL(DefaultRecoder, s3.New(sess))

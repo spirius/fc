@@ -138,7 +138,7 @@ func (c *coderTPL) Names() []string {
 
 func (c *coderTPL) Encode(out io.Writer, in interface{}, metadata interface{}, args []string) error {
 	if len(args) != 1 {
-		return errors.Trace(ArgumentError{error: fmt.Sprintf("tpl: expecting one argument: template file")})
+		return errors.Trace(ArgumentError{error: "tpl: expecting one argument: template file"})
 	}
 	buf, err := c.include(args[0], in, metadata)
 	if err != nil {

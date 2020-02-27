@@ -1,3 +1,7 @@
+# v2.1.1 - (February 27, 2020)
+ * Include current version in version detection output
+ * Add null encoder
+
 # v2.1.0 - (October 31, 2019)
  * Bump sprig version to v3.0.0
  * Switch to go 1.13
